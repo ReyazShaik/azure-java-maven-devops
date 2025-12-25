@@ -1,21 +1,92 @@
 trigger:
-- main
+  - main
 
 pool:
   name: self-hosted-linux
 
 variables:
-  SONAR_HOST_URL: http://20.193.148.234:9000
-  SONAR_TOKEN: $(sonarToken)
+  WAR_NAME: myapp.war
+  STORAGE_ACCOUNT: cicdartifacts123
+  CONTAINER_NAME: artifacts
+  SONAR_PROJECT_KEY: hotstar
 
-steps:
-- task: Maven@3
-  inputs:
-    mavenPomFile: 'pom.xml'
-    goals: 'clean verify sonar:sonar'
-    options: >
-      -Dsonar.projectKey=java-app
-      -Dsonar.host.url=$(SONAR_HOST_URL)
-      -Dsonar.login=$(SONAR_TOKEN)
-    javaHomeOption: 'JDKVersion'
-    jdkVersionOption: '17'
+stages:
+- stage: Build_Scan_Publish
+  displayName: Build, Scan, and Publish Artifact
+  jobs:
+  - job: Build
+    displayName: Maven Build & SonarQube
+    steps:
+
+    # Checkout source code from GitHub
+    - checkout: self
+
+    # SonarQube Preparation
+    - task: SonarQubePrepare@5
+      inputs:
+        SonarQube: 'SonarQube-Service-Connection'
+        scannerMode: 'CLI'
+        configMode: 'manual'
+        cliProjectKey: '$(SONAR_PROJECT_KEY)'
+        cliSources: '.'
+
+    # Maven Build + Sonar Scan
+    - task: Maven@3
+      inputs:
+        mavenPomFile: 'pom.xml'
+        goals: 'clean package sonar:sonar'
+        javaHomeOption: 'JDKVersion'
+        jdkVersionOption: '1.17'
+        mavenVersionOption: 'Default'
+
+    # SonarQube Quality Gate (fails pipeline if failed)
+    - task: SonarQubePublish@5
+      inputs:
+        pollingTimeoutSec: '300'
+
+    # Upload WAR to Azure Blob Storage
+    - task: AzureCLI@2
+      displayName: Upload WAR to Azure Blob
+      inputs:
+        azureSubscription: 'Azure-Service-Connection'   # CHANGE_ME
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          az storage blob upload \
+            --account-name $(STORAGE_ACCOUNT) \
+            --container-name $(CONTAINER_NAME) \
+            --name $(WAR_NAME) \
+            --file target/*.war \
+            --overwrite
+
+- stage: Deploy
+  displayName: Deploy to Tomcat
+  dependsOn: Build_Scan_Publish
+  jobs:
+  - job: DeployToTomcat
+    displayName: Download & Deploy WAR
+    steps:
+
+    # Download WAR from Azure Blob
+    - task: AzureCLI@2
+      displayName: Download WAR from Azure Blob
+      inputs:
+        azureSubscription: 'Azure-Service-Connection'   # CHANGE_ME
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          az storage blob download \
+            --account-name $(STORAGE_ACCOUNT) \
+            --container-name $(CONTAINER_NAME) \
+            --name $(WAR_NAME) \
+            --file $(WAR_NAME)
+
+    # Copy WAR to Tomcat webapps directory
+    - task: CopyFilesOverSSH@0
+      displayName: Deploy WAR to Tomcat
+      inputs:
+        sshEndpoint: 'Tomcat-VM-SSH'   # CHANGE_ME
+        sourceFolder: '$(System.DefaultWorkingDirectory)'
+        contents: '$(WAR_NAME)'
+        targetFolder: '/opt/tomcat/webapps'
+        overwrite: true
