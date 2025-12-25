@@ -2,7 +2,7 @@ trigger:
   - main
 
 pool:
-  name: self-hosted-linux   # Replace with your self-hosted agent pool
+  name: self-hosted-linux   # Your self-hosted agent pool
 
 variables:
   WAR_NAME: myapp.war
@@ -21,15 +21,15 @@ stages:
     # Checkout code
     - checkout: self
 
-    # Install Java 17 automatically (Azure Pipelines)
+    # Install Java 17 automatically from Azure Pipelines
     - task: JavaToolInstaller@0
       displayName: Install Java 17
       inputs:
         versionSpec: '17'
         jdkArchitectureOption: 'x64'
-        jdkSourceOption: 'AzurePipelines'   # Auto-download
+        jdkSourceOption: 'AzurePipelines'
 
-    # Prepare SonarQube
+    # Prepare SonarQube scan
     - task: SonarQubePrepare@8
       inputs:
         SonarQube: 'SonarQube-Service-Connection'
@@ -98,3 +98,12 @@ stages:
         contents: '$(WAR_NAME)'
         targetFolder: '/apache-tomcat-11.0.15/webapps'
         overwrite: true
+
+    # Restart Tomcat to load the new WAR
+    - task: SSH@0
+      displayName: Restart Tomcat
+      inputs:
+        sshEndpoint: 'Tomcat-VM-SSH'
+        runOptions: 'commands'
+        commands: |
+          sudo systemctl restart tomcat
