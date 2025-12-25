@@ -43,8 +43,8 @@ stages:
       inputs:
         mavenPomFile: 'pom.xml'
         goals: 'clean package sonar:sonar'
-        javaHomeOption: 'JDKVersion'
-        jdkVersionOption: '17'
+        javaHomeOption: 'JDKPath'
+        jdkPath: '/usr/lib/jvm/java-17-openjdk-amd64'
         mavenVersionOption: 'Default'
 
     # SonarQube Quality Gate
