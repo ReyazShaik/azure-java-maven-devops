@@ -2,7 +2,7 @@ trigger:
   - main
 
 pool:
-  name: self-hosted-linux
+  name: self-hosted-linux   # Your self-hosted agent pool
 
 variables:
   WAR_NAME: myapp.war
@@ -18,10 +18,17 @@ stages:
     displayName: Maven Build & SonarQube
     steps:
 
-    # Checkout source code from GitHub
+    # Checkout code
     - checkout: self
-    
-    # SonarQube Preparation
+
+    # Install or use Java 17
+    - task: JavaToolInstaller@0
+      displayName: Use Java 17
+      inputs:
+        versionSpec: '17'
+        jdkArchitectureOption: 'x64'
+
+    # Prepare SonarQube
     - task: SonarQubePrepare@8
       inputs:
         SonarQube: 'SonarQube-Service-Connection'
@@ -36,19 +43,19 @@ stages:
         mavenPomFile: 'pom.xml'
         goals: 'clean package sonar:sonar'
         javaHomeOption: 'JDKVersion'
-        jdkVersionOption: '1.17'
+        jdkVersionOption: '17'
         mavenVersionOption: 'Default'
 
-    # SonarQube Quality Gate (fails pipeline if failed)
+    # SonarQube Quality Gate
     - task: SonarQubePublish@8
       inputs:
         pollingTimeoutSec: '300'
 
-    # Upload WAR to Azure Blob Storage
+    # Upload WAR to Azure Blob
     - task: AzureCLI@2
       displayName: Upload WAR to Azure Blob
       inputs:
-        azureSubscription: 'Azure-Service-Connection'   # CHANGE_ME
+        azureSubscription: 'Azure-Service-Connection'
         scriptType: bash
         scriptLocation: inlineScript
         inlineScript: |
@@ -71,7 +78,7 @@ stages:
     - task: AzureCLI@2
       displayName: Download WAR from Azure Blob
       inputs:
-        azureSubscription: 'Azure-Service-Connection'   # CHANGE_ME
+        azureSubscription: 'Azure-Service-Connection'
         scriptType: bash
         scriptLocation: inlineScript
         inlineScript: |
@@ -81,11 +88,11 @@ stages:
             --name $(WAR_NAME) \
             --file $(WAR_NAME)
 
-    # Copy WAR to Tomcat webapps directory
+    # Copy WAR to Tomcat webapps via SSH
     - task: CopyFilesOverSSH@0
       displayName: Deploy WAR to Tomcat
       inputs:
-        sshEndpoint: 'Tomcat-VM-SSH'   # CHANGE_ME
+        sshEndpoint: 'Tomcat-VM-SSH'
         sourceFolder: '$(System.DefaultWorkingDirectory)'
         contents: '$(WAR_NAME)'
         targetFolder: '/apache-tomcat-11.0.15/webapps'
