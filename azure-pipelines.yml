@@ -22,7 +22,7 @@ stages:
     - checkout: self
 
     # SonarQube Preparation
-    - task: SonarQubePrepare@5
+    - task: SonarQubePrepare@8
       inputs:
         SonarQube: 'SonarQube-Service-Connection'
         scannerMode: 'CLI'
@@ -40,7 +40,7 @@ stages:
         mavenVersionOption: 'Default'
 
     # SonarQube Quality Gate (fails pipeline if failed)
-    - task: SonarQubePublish@5
+    - task: SonarQubePublish@8
       inputs:
         pollingTimeoutSec: '300'
 
@@ -88,5 +88,5 @@ stages:
         sshEndpoint: 'Tomcat-VM-SSH'   # CHANGE_ME
         sourceFolder: '$(System.DefaultWorkingDirectory)'
         contents: '$(WAR_NAME)'
-        targetFolder: '/opt/tomcat/webapps'
+        targetFolder: '/apache-tomcat-11.0.15/webapps'
         overwrite: true
