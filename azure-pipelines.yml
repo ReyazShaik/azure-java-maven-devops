@@ -1,19 +1,21 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
-
 trigger:
 - main
 
 pool:
-  vmImage: ubuntu-latest
+  name: self-hosted-linux
+
+variables:
+  SONAR_HOST_URL: http://20.193.148.234:9000
+  SONAR_TOKEN: $(sonarToken)
 
 steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
-
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+- task: Maven@3
+  inputs:
+    mavenPomFile: 'pom.xml'
+    goals: 'clean verify sonar:sonar'
+    options: >
+      -Dsonar.projectKey=java-app
+      -Dsonar.host.url=$(SONAR_HOST_URL)
+      -Dsonar.login=$(SONAR_TOKEN)
+    javaHomeOption: 'JDKVersion'
+    jdkVersionOption: '17'
