@@ -18,15 +18,16 @@ stages:
     displayName: Maven Build & SonarQube
     steps:
 
-    # Checkout code
+    # Checkout source code
     - checkout: self
 
-    # Install or use Java 17
+    # Install Java 17 automatically (Azure Pipelines will download it)
     - task: JavaToolInstaller@0
-      displayName: Use Java 17
+      displayName: Install Java 17
       inputs:
         versionSpec: '17'
         jdkArchitectureOption: 'x64'
+        jdkSourceOption: 'AzurePipelines'
 
     # Prepare SonarQube
     - task: SonarQubePrepare@8
