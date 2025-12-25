@@ -21,14 +21,6 @@ stages:
     # Checkout source code
     - checkout: self
 
-    # Install Java 17 automatically from Azure Pipelines
-    - task: JavaToolInstaller@0
-      displayName: Install Java 17
-      inputs:
-        versionSpec: '17'
-        jdkArchitectureOption: 'x64'
-        jdkSourceOption: 'AzurePipelines'   # Must be AzurePipelines
-
     # Prepare SonarQube scan
     - task: SonarQubePrepare@8
       inputs:
