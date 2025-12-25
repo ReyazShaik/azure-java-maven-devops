@@ -27,7 +27,7 @@ stages:
       inputs:
         versionSpec: '17'
         jdkArchitectureOption: 'x64'
-        jdkSourceOption: 'AzurePipelines'
+        jdkSourceOption: 'AzurePipelines'   # Auto-download JDK
 
     # Prepare SonarQube
     - task: SonarQubePrepare@8
