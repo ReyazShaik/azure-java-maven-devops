@@ -20,7 +20,7 @@ stages:
 
     # Checkout source code from GitHub
     - checkout: self
-
+    
     # SonarQube Preparation
     - task: SonarQubePrepare@8
       inputs:
