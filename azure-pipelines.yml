@@ -2,7 +2,7 @@ trigger:
   - main
 
 pool:
-  name: self-hosted-linux   # Your self-hosted agent pool
+  name: self-hosted-linux   # Replace with your self-hosted agent pool
 
 variables:
   WAR_NAME: myapp.war
@@ -18,16 +18,16 @@ stages:
     displayName: Maven Build & SonarQube
     steps:
 
-    # Checkout source code
+    # Checkout code
     - checkout: self
 
-    # Install Java 17 automatically (Azure Pipelines will download it)
+    # Install Java 17 automatically (Azure Pipelines)
     - task: JavaToolInstaller@0
       displayName: Install Java 17
       inputs:
         versionSpec: '17'
         jdkArchitectureOption: 'x64'
-        jdkSourceOption: 'AzurePipelines'   # Auto-download JDK
+        jdkSourceOption: 'AzurePipelines'   # Auto-download
 
     # Prepare SonarQube
     - task: SonarQubePrepare@8
